@@ -61,7 +61,7 @@ contract ExchangeERC721 {
     /* 
         When an owner of token1 has set an exchange between two tokens, 
         owner of token2 has to:
-        1) Approve contract address to use hit token
+        1) Approve contract address to use this token
         2) Use ConfirmExchange function
     */
 
@@ -71,9 +71,10 @@ contract ExchangeERC721 {
         address tokenAddress) external TokensCompare(myToken, desiredToken) returns(bool)
     {
 
-        // Check if owner of desired token freezed his exchange
+        // Check if owner of desired token froze his exchange
         require(tokenState[tokenAddress][desiredToken], "Exchange for token1 was denied");
 
+        require(currentExchanges[tokenAddress][desiredToken] == myToken, "No such exchange exists");
      //   require(tokenState[tokenAddress][ myToken], "Exchange for token2 was denied");
         ERC721 tokenInterface = ERC721(tokenAddress);
         require( tokenInterface.ownerOf(myToken) == msg.sender, "Not an owner");
@@ -102,7 +103,7 @@ contract ExchangeERC721 {
 
     /* 
         Destroy current exchange between token1 and token2
-        Allowade only for one of the owners
+        Allowed only for one of the owners
     */
 
     function DenyExchangeBetweenTokens(
@@ -115,13 +116,14 @@ contract ExchangeERC721 {
          require(msg.sender == tokenInterface.ownerOf(token1) || msg.sender == tokenInterface.ownerOf(token2),
          "You must be owner of one of the tokens");
          _denyExchangeBetweenTokens(token1, token2, tokenAddress);
+
+         return true;
     }
 
     function FreezeExchangeForMyToken(uint tokenId, address tokenAddress) external {
         ERC721 tokenInterface = ERC721(tokenAddress);
         require(msg.sender == tokenInterface.ownerOf(tokenId), "You are not an owner");
-        tokenState[tokenAddress][tokenId] = false;
-        
+        tokenState[tokenAddress][tokenId] = false;  
     }
 
     /*
@@ -131,7 +133,7 @@ contract ExchangeERC721 {
     function GetSimpleExchangeForToken(uint tokenId, address tokenAddress) external view 
                 returns(uint)
     {
-        require(tokenState[tokenAddress][tokenId], "No exchange currenty");
+        require(tokenState[tokenAddress][tokenId], "No exchange currently");
         return currentExchanges[tokenAddress][tokenId];
     }
 
