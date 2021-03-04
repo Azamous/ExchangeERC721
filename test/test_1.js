@@ -8,7 +8,7 @@ const ExchangeERC721 = artifacts.require('ExchangeERC721');
 const Token = artifacts.require('DragonTokenERC721');
 
 const name = "123";
-const tokenAddress = "0x65107a51Ce51A41115B3CcC23BAc17C35a9F6eA8";
+const tokenAddress = "0x9DAFa2A92dA27e5Db30a65212194bB8F341A66A1";
 
 describe('Testing exchanging erc721 tokens', () => {
     let deployer;
@@ -49,6 +49,41 @@ describe('Testing exchanging erc721 tokens', () => {
             expect(await tokenInstance.ownerOf(1)).to.equal(user1);
         });
 
+        it('Should not let not owner of token init exchange', async () => {
+             // mint tokens
+        await tokenInstance.CreateGreenWelschDragon(name, 0, {from: user1});
+        await tokenInstance.CreateGreenWelschDragon(name, 0, {from: user2});
+        // Init exchange
+        await tokenInstance.approve(exchangeInstance.address, 0, {from: user1});
+        await truffleAssert.reverts(
+            exchangeInstance.InitExchangeRoom(0, 1, user2, tokenAddress, {from: user3}),
+            "Only for owner"
+        );
+        });
+
+        it('Check given address of other token\'s owner', async () => {
+            // mint tokens
+        await tokenInstance.CreateGreenWelschDragon(name, 0, {from: user1});
+        await tokenInstance.CreateGreenWelschDragon(name, 0, {from: user2});
+        // Init exchange
+        await tokenInstance.approve(exchangeInstance.address, 0, {from: user1});
+        await truffleAssert.reverts(
+            exchangeInstance.InitExchangeRoom(0, 1, user3, tokenAddress, {from: user1}),
+            "_to is not an owner of desired token"
+        );
+        });
+
+        it('Approve contract address first', async () => {
+            // mint tokens
+        await tokenInstance.CreateGreenWelschDragon(name, 0, {from: user1});
+        await tokenInstance.CreateGreenWelschDragon(name, 0, {from: user2});
+            // Try to init exchange
+        await truffleAssert.reverts(
+            exchangeInstance.InitExchangeRoom(0, 1, user2, tokenAddress, {from: user1}),
+            "Approve for contract address first"
+        );
+        });
+
         it('Should show current exchange for token', async () => {
             // mint tokens
         await tokenInstance.CreateGreenWelschDragon(name, 0, {from: user1});
@@ -70,11 +105,47 @@ describe('Testing exchanging erc721 tokens', () => {
         await tokenInstance.approve(exchangeInstance.address, 0, {from: user1});
         await exchangeInstance.InitExchangeRoom(0, 1, user2, tokenAddress, {from: user1});
         // Deny exchange
-        await exchangeInstance.DenyExchange(0, 1, tokenAddress, {from: user2});
+        await exchangeInstance.DenyExchangeBetweenTokens(0, 1, tokenAddress, {from: user2});
         // Get exchange
         await truffleAssert.reverts(
             exchangeInstance.GetSimpleExchangeForToken(0, tokenAddress, {from: user2}),
-            "No exchange currenty"
+            "No exchange currently"
+        );
+        });
+
+        it('Should deny exchange for token1', async () => {
+            // mint tokens
+        await tokenInstance.CreateGreenWelschDragon(name, 0, {from: user1});
+        await tokenInstance.CreateGreenWelschDragon(name, 0, {from: user2});
+        // Init exchange
+        await tokenInstance.approve(exchangeInstance.address, 0, {from: user1});
+        await exchangeInstance.InitExchangeRoom(0, 1, user2, tokenAddress, {from: user1});
+        // Deny exchange for token
+        await exchangeInstance.FreezeExchangeForMyToken(0, tokenAddress, {from: user1});
+        // Try to confirm exchange
+        await truffleAssert.reverts(
+            exchangeInstance.ConfirmExchange(0, 1, tokenAddress, {from: user2}),
+            "Exchange for token1 was denied"
+        );
+        });
+
+        it('Should deny exchange between two tokens', async () => {
+             // mint tokens
+        await tokenInstance.CreateGreenWelschDragon(name, 0, {from: user1});
+        await tokenInstance.CreateGreenWelschDragon(name, 0, {from: user2});
+        // Init exchange
+        await tokenInstance.approve(exchangeInstance.address, 0, {from: user1});
+        await exchangeInstance.InitExchangeRoom(0, 1, user2, tokenAddress, {from: user1});
+        // Deny exchange
+        await exchangeInstance.DenyExchangeBetweenTokens(0, 1, tokenAddress, {from: user2});
+
+        expect(await exchangeInstance.GetSimpleExchangeForToken(0, tokenAddress, {from: user3}).toNumber())
+        .to
+        .equal(0);  
+
+        await truffleAssert.reverts(
+            exchangeInstance.ConfirmExchange(0, 1, tokenAddress, {from: user2}),
+            "No such exchange exists"
         );
         });
     });
