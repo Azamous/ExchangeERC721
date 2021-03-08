@@ -33,6 +33,11 @@ contract ExchangeERC721 {
         Before initting, an owner of token1 has to approve contract address to use token
     */
 
+    /// @dev Inits an exchange with other address 
+    /// @param myToken First token for exchange
+    /// @param desiredToken Second token of other address for exchange
+    /// @param _to Address of the owner of desired token 
+    /// @param tokenAddress Address of tokens(this function works in boundaries of one protocol)
     function InitExchangeRoom(
         uint myToken, 
         uint desiredToken,  
@@ -65,6 +70,9 @@ contract ExchangeERC721 {
         2) Use ConfirmExchange function
     */
 
+    /// @param myToken ID of token2 
+    /// @param desiredToken ID of token1
+    /// @param tokenAddress Address of tokens(this function works in boundaries of one protocol)
     function ConfirmExchange(
         uint myToken,
         uint desiredToken,
@@ -106,6 +114,9 @@ contract ExchangeERC721 {
         Allowed only for one of the owners
     */
 
+    /// @param token1 First token of exchange
+    /// @param token2 Second token of exchange
+    /// @param tokenAddress Address of tokens(this function works in boundaries of one protocol)
     function DenyExchangeBetweenTokens(
         uint token1,
         uint token2,
@@ -120,6 +131,9 @@ contract ExchangeERC721 {
          return true;
     }
 
+    /// @dev Freezes all exchanges for token
+    /// @param tokenId ID of token
+    /// @param tokenAddress Address of tokens(this function works in boundaries of one protocol)
     function FreezeExchangeForMyToken(uint tokenId, address tokenAddress) external {
         ERC721 tokenInterface = ERC721(tokenAddress);
         require(msg.sender == tokenInterface.ownerOf(tokenId), "You are not an owner");
@@ -130,6 +144,9 @@ contract ExchangeERC721 {
         Get a current exchange which owner of tokenId has set 
     */
 
+    /// @dev Returns current exchange for token
+    /// @param tokenId ID of token
+    /// @param tokenAddress Address of tokens(this function works in boundaries of one protocol)
     function GetSimpleExchangeForToken(uint tokenId, address tokenAddress) external view 
                 returns(uint)
     {
